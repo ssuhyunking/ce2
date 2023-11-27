@@ -1,4 +1,4 @@
-package study.coco.book;
+package study.coco.model;
 
 public class Book {
     public String name;
@@ -18,5 +18,8 @@ public class Book {
         this.page = page;
     }
 
-    
+    public void title(){
+        System.out.println("Title: "+this.name);
+    }
+
 }
