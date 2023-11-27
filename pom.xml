@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>study.coco</groupId>
-    <artifactId>minimal-code-starter-maven</artifactId>
+    <artifactId>ce2-exercise</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -18,5 +18,20 @@
     </dependencies>
 
     <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>study.coco.App</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
