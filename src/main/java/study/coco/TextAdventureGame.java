@@ -55,8 +55,9 @@ public class TextAdventureGame {
         bedroom.setExit("livingroom", livingRoom);
         greenhouse.setExit("kitchen", kitchen);
 
-        livingRoom.addItem(new TVItem("TV", "A TV that can show cooking channels."));
+        livingRoom.addItem(new TVItem("tv", "A TV that can show cooking channels."));
         kitchen.addItem(new KeyItem("key", "A key to enter the greenhouse.", kitchen));
+        kitchen.addItem(new WateringCanItem("watering_can", "A can used for watering plants."));
         bedroom.addItem(new RecipeItem("recipe", "A recipe book.", "Enjoy text adventure games!"));
 
         rooms.put("livingroom", livingRoom);
@@ -94,7 +95,7 @@ class Player {
     public void handleInput(String input) {
         decreaseHealth();
         String[] parts = input.toLowerCase().split(" ");
-        String command = parts[0];
+        String command = parts[0].toLowerCase();
 
         switch (command) {
             case "go":
@@ -127,7 +128,13 @@ class Player {
                 if (item == null) {
                     System.out.println("Item not found.");
                 } else {
-                    item.use(this);
+                    if (item instanceof WateringCanItem) {
+                        inventory.put(item.getName(), item); // get item
+                        currentRoom.removeItem(item); // remove item from the room
+                        System.out.println("You obtained the watering_can.");
+                    } else {
+                        item.use(this);
+                    }
                 }
                 break;
             case "inventory":
@@ -266,6 +273,10 @@ class Room {
         return items.get(itemName);
     }
 
+    public void removeItem(Item item) {
+        items.remove(item.getName());
+    }
+
     public Collection<Item> getItems() {
         return items.values();
     }
@@ -349,6 +360,29 @@ class RecipeItem extends Item {
     }
 }
 
+class WateringCanItem extends Item {
+    public WateringCanItem(String name, String description) {
+        super(name, description);
+    }
+
+    @Override
+    public void use(Player player) {
+        if (player.getCurrentRoom() instanceof Greenhouse) {
+            Greenhouse greenhouse = (Greenhouse) player.getCurrentRoom();
+            Plant plant = greenhouse.getPlant();
+            if (plant != null) {
+                System.out.println("You used the watering_can.");
+                System.out.println("The plant is watered and looks healthier.");
+                greenhouse.growPlant(); // grow plant
+            } else {
+                System.out.println("There are no plants to water.");
+            }
+        } else {
+            System.out.println("You can only use the watering_can in the greenhouse.");
+        }
+    }
+}
+
 class PlantItem extends Item {
     public PlantItem(String name, String description) {
         super(name, description);
@@ -358,6 +392,8 @@ class PlantItem extends Item {
 class Plant {
     private String name;
     private String description;
+    private int height; // height of the plant
+    private boolean mature; // is plant mature or not
 
     public Plant(String name, String description) {
         this.name = name;
@@ -370,6 +406,17 @@ class Plant {
 
     public String getDescription() {
         return description;
+    }
+
+    public void grow() {
+        height++;
+        if (height >= 3) { // if you player give water 3 times, mature
+            mature = true; // plant is mature
+        }
+    }
+
+    public boolean isMature() {
+        return mature;
     }
 }
 
@@ -390,5 +437,17 @@ class Greenhouse extends Room {
 
     public void removePlant() {
         this.plant = null;
+    }
+
+    public void growPlant() {
+        if (plant != null) {
+            System.out.println("The plant grows taller.");
+            // update status of the plant
+            plant.grow(); // method for growing plant
+            if (plant.isMature()) {
+                System.out.println("The plant is fully grown and ready for harvest.");
+
+            }
+        }
     }
 }
