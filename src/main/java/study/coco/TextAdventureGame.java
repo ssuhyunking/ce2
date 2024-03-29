@@ -22,5 +22,5 @@ public class TextAdventureGame {
     private static Map<String, Room> createRooms() {
         Map<String, Room> rooms = new HashMap<>();
 
-    }
+    }change
 }
