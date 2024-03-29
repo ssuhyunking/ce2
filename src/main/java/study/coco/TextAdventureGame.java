@@ -3,14 +3,16 @@ package study.coco;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Collection;
 
 public class TextAdventureGame {
+    public static Map<String, Room> rooms;
     public static void main(String[] args) {
         System.out.println("Starting the housework!");
 
         Player player = new Player();
-        Map<String, Room> rooms = createRooms();
-        player.setCurrentRoom(rooms.get("Living Room"));
+        rooms = createRooms();
+        player.setCurrentRoom(rooms.get("livingroom"));
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -39,28 +41,28 @@ public class TextAdventureGame {
     }
 
     private static Map<String, Room> createRooms() {
-        Map<String, Room> rooms = new HashMap<>();
+        rooms = new HashMap<>();
 
-        Room livingRoom = new Room("Living Room", "There is a spacious living room.");
-        Room kitchen = new Room("Kitchen", "It's a clean kitchen.");
-        Room bedroom = new Room("Bedroom", "It's a warm bedroom.");
-        Greenhouse greenhouse = new Greenhouse("Greenhouse", "It's a greenhouse with beautiful plants.");
+        Room livingRoom = new Room("living Room", "There is a spacious living room.");
+        Room kitchen = new Room("kitchen", "It's a clean kitchen.");
+        Room bedroom = new Room("bedroom", "It's a warm bedroom.");
+        Greenhouse greenhouse = new Greenhouse("greenhouse", "It's a greenhouse with beautiful plants.");
 
-        livingRoom.setExit("Kitchen", kitchen);
-        livingRoom.setExit("Bedroom", bedroom);
-        kitchen.setExit("Living Room", livingRoom);
-        kitchen.setExit("Greenhouse", greenhouse);
-        bedroom.setExit("Living Room", livingRoom);
-        greenhouse.setExit("Kitchen", kitchen);
+        livingRoom.setExit("kitchen", kitchen);
+        livingRoom.setExit("bedroom", bedroom);
+        kitchen.setExit("livingroom", livingRoom);
+        kitchen.setExit("greenhouse", greenhouse);
+        bedroom.setExit("livingroom", livingRoom);
+        greenhouse.setExit("kitchen", kitchen);
 
         livingRoom.addItem(new TVItem("TV", "A TV that can show cooking channels."));
-        kitchen.addItem(new KeyItem("Key", "A key to enter the greenhouse.", greenhouse));
-        bedroom.addItem(new RecipeItem("Recipe", "A recipe book.", "Enjoy text adventure games!"));
+        kitchen.addItem(new KeyItem("key", "A key to enter the greenhouse.", kitchen));
+        bedroom.addItem(new RecipeItem("recipe", "A recipe book.", "Enjoy text adventure games!"));
 
-        rooms.put("Living Room", livingRoom);
-        rooms.put("Kitchen", kitchen);
-        rooms.put("Bedroom", bedroom);
-        rooms.put("Greenhouse", greenhouse);
+        rooms.put("livingroom", livingRoom);
+        rooms.put("kitchen", kitchen);
+        rooms.put("bedroom", bedroom);
+        rooms.put("greenhouse", greenhouse);
 
         return rooms;
     }
@@ -91,7 +93,7 @@ class Player {
 
     public void handleInput(String input) {
         decreaseHealth();
-        String[] parts = input.split(" ");
+        String[] parts = input.toLowerCase().split(" ");
         String command = parts[0];
 
         switch (command) {
