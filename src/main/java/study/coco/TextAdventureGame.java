@@ -1,5 +1,3 @@
-package study.coco;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -60,7 +58,7 @@ public class TextAdventureGame {
         kitchen.addItem(new CookingItem("Cooking Utensils", "Cook a meal using ingredients."));
         bedroom.addItem(new BookItem("Book", "A readable book.", "Enjoy text adventure games!"));
 
-        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as a ingredients for cooking."));
+        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as a ingredient for cooking."));
 
         rooms.put("Living Room", livingRoom);
         rooms.put("Kitchen", kitchen);
@@ -179,7 +177,7 @@ class Player {
             Plant plant = greenhouse.getPlant();
             if (plant != null) {
                 System.out.println("Harvested " + plant.getName());
-                // Add harvested plant to inventory or do something else
+                inventory.put(plant.getName().toLowerCase(), new Plant(plant.getName(), plant.getDescription()));
             } else {
                 System.out.println("No plants to harvest.");
             }
@@ -203,11 +201,37 @@ class Player {
     }
 
     private void cookMeal() {
-        // Implement cooking
+        if (currentRoom.getName().equalsIgnoreCase("kitchen")) {
+            if (inventory.containsKey("basil")) {
+                System.out.println("Cooking a meal with basil...");
+                // Implement cooking process here
+            } else {
+                System.out.println("You need basil to cook a meal.");
+            }
+        } else {
+            System.out.println("You can only cook in the kitchen.");
+        }
     }
 
     private void sleep() {
-        // Implement sleeping
+        boolean allRoomsClean = true;
+        for (Room room : currentRoom.getExits().values()) {
+            if (!room.isClean()) {
+                allRoomsClean = false;
+                break;
+            }
+        }
+
+        if (allRoomsClean) {
+            if (currentRoom.getName().equalsIgnoreCase("bedroom")) {
+                System.out.println("You go to sleep.");
+                // Implement sleeping process here
+            } else {
+                System.out.println("You need to be in the bedroom to sleep.");
+            }
+        } else {
+            System.out.println("You cannot sleep until all rooms are clean.");
+        }
     }
 }
 
@@ -232,6 +256,10 @@ class Room {
 
     public Room getExit(String direction) {
         return exits.get(direction.toLowerCase()); // 방향을 소문자로 조회
+    }
+
+    public Map<String, Room> getExits() {
+        return exits;
     }
 
     public String getName() {
