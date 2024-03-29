@@ -1,5 +1,3 @@
-package study.coco;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -25,7 +23,7 @@ public class TextAdventureGame {
                 System.out.println("Command list:");
                 System.out.println("- go direction: Move in the specified direction.");
                 System.out.println("- look: Display the current room's description and item list.");
-                System.out.println("- use item name: Use the specified item.");
+                System.out.println("- use item name: Use the specified item. If the item is in the current room, it will be added to your inventory.");
                 System.out.println("- inventory: Display the list of items in the inventory.");
                 System.out.println("- harvest: Harvest plants to obtain ingredients.");
                 System.out.println("- clean: Clean the living room, bedroom, and kitchen.");
@@ -42,25 +40,25 @@ public class TextAdventureGame {
     private static Map<String, Room> createRooms() {
         Map<String, Room> rooms = new HashMap<>();
 
-        Room livingRoom = new Room("Living Room", "There is a spacious living room.");
-        Room kitchen = new Room("Kitchen", "It's a clean kitchen.");
-        Room bedroom = new Room("Bedroom", "It's a warm bedroom.");
-        Greenhouse greenhouse = new Greenhouse("Greenhouse", "It's a greenhouse with beautiful plants.");
+        Room livingRoom = new Room("living Room", "There is a spacious living room.");
+        Room kitchen = new Room("kitchen", "It's a clean kitchen.");
+        Room bedroom = new Room("bedroom", "It's a warm bedroom.");
+        Greenhouse greenhouse = new Greenhouse("greenhouse", "It's a greenhouse with beautiful plants.");
 
-        livingRoom.setExit("Kitchen", kitchen);
-        livingRoom.setExit("Bedroom", bedroom);
-        kitchen.setExit("Living Room", livingRoom);
-        kitchen.setExit("Greenhouse", greenhouse);
-        bedroom.setExit("Living Room", livingRoom);
-        greenhouse.setExit("Kitchen", kitchen);
+        livingRoom.setExit("kitchen", kitchen);
+        livingRoom.setExit("bedroom", bedroom);
+        kitchen.setExit("living Room", livingRoom);
+        kitchen.setExit("greenhouse", greenhouse);
+        bedroom.setExit("living Room", livingRoom);
+        greenhouse.setExit("kitchen", kitchen);
 
         livingRoom.addItem(new TVItem("TV", "A TV that can show cooking channels."));
         kitchen.addItem(new WateringCanItem("Watering Can", "A watering can to water the plants."));
         kitchen.addItem(new KeyItem("Key", "A key to enter the greenhouse.", greenhouse));
         kitchen.addItem(new CookingItem("Cooking Utensils", "Cook a meal using ingredients."));
-        bedroom.addItem(new RecipeItem("Recipe", "A readable recipe.", "Enjoy text adventure games!"));
+        bedroom.addItem(new RecipeItem("Recipe", "A recipe book.", "Enjoy text adventure games!"));
 
-        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as an ingredient for cooking."));
+        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as ingredients for cooking."));
 
         rooms.put("Living Room", livingRoom);
         rooms.put("Kitchen", kitchen);
@@ -130,7 +128,13 @@ class Player {
                 if (item == null) {
                     System.out.println("Item not found.");
                 } else {
-                    item.use(this);
+                    if (item instanceof WateringCanItem && currentRoom.getName().equalsIgnoreCase("kitchen")) {
+                        inventory.put(item.getName(), item);
+                        System.out.println("Added " + item.getName() + " to inventory.");
+                        currentRoom.getItems().remove(item.getName());
+                    } else {
+                        item.use(this);
+                    }
                 }
                 break;
             case "inventory":
@@ -140,55 +144,16 @@ class Player {
                 }
                 break;
             case "harvest":
-                if (currentRoom instanceof Greenhouse) {
-                    Greenhouse greenhouse = (Greenhouse) currentRoom;
-                    Plant plant = greenhouse.getPlant();
-                    if (plant != null) {
-                        plant.harvest();
-                        inventory.put(plant.getName(), new Item(plant.getName(), plant.getDescription()));
-                        System.out.println("You harvested the plant and obtained some ingredients.");
-                    } else {
-                        System.out.println("There are no plants to harvest.");
-                    }
-                } else {
-                    System.out.println("You are not in the greenhouse.");
-                }
+                // Implement harvesting plants
                 break;
             case "clean":
-                if (currentRoom.isClean()) {
-                    System.out.println("The room is already clean.");
-                } else {
-                    currentRoom.clean();
-                    System.out.println("You cleaned the room.");
-                }
+                // Implement cleaning rooms
                 break;
             case "cook":
-                if (currentRoom.getName().equalsIgnoreCase("kitchen")) {
-                    boolean hasIngredients = inventory.containsKey("Basil");
-                    if (hasIngredients) {
-                        System.out.println("Cooking a meal...");
-                        double successRate = getCookingSuccessRate();
-                        if (Math.random() < successRate) {
-                            System.out.println("You successfully cooked a meal!");
-                        } else {
-                            System.out.println("You failed to cook the meal.");
-                        }
-                    } else {
-                        System.out.println("You don't have the necessary ingredients.");
-                    }
-                } else {
-                    System.out.println("You need to be in the kitchen to cook.");
-                }
+                // Implement cooking
                 break;
             case "sleep":
-                Map<String, Room> rooms = TextAdventureGame.createRooms();
-                if (rooms.values().stream().allMatch(Room::isClean) && currentRoom.getName().equalsIgnoreCase("bedroom")) {
-                    System.out.println("You sleep in the clean bedroom.");
-                    System.out.println("You had a good rest. Good Ending!");
-                    System.exit(0);
-                } else {
-                    System.out.println("You cannot sleep yet. Make sure all rooms are clean and you are in the bedroom.");
-                }
+                // Implement sleeping
                 break;
             default:
                 System.out.println("Invalid command.");
@@ -343,6 +308,13 @@ class RecipeItem extends Item {
         super(name, description, true);
         this.content = content;
     }
+
+    @Override
+    public void use(Player player) {
+        System.out.println("Reading the recipe...");
+        System.out.println("You feel more confident in your cooking skills. Cooking success rate increased.");
+        player.setCookingSuccessRate(player.getCookingSuccessRate() + 0.1);
+    }
 }
 
 class Plant {
@@ -380,17 +352,7 @@ class Plant {
 }
 
 class Greenhouse extends Room {
-    private Plant plant;
-
     public Greenhouse(String name, String description) {
         super(name, description);
-    }
-
-    public void addPlant(Plant plant) {
-        this.plant = plant;
-    }
-
-    public Plant getPlant() {
-        return plant;
     }
 }
