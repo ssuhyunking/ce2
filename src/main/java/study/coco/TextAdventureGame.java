@@ -1,3 +1,5 @@
+package study.coco;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -15,7 +17,7 @@ public class TextAdventureGame {
         while (true) {
             System.out.println(player.getCurrentRoom().getDescription());
             System.out.print("> ");
-            String input = scanner.nextLine().toLowerCase(); // 입력값을 소문자로 변환
+            String input = scanner.nextLine();
             if (input.equalsIgnoreCase("quit")) {
                 System.out.println("Exiting the game.");
                 break;
@@ -45,20 +47,20 @@ public class TextAdventureGame {
         Room bedroom = new Room("Bedroom", "It's a warm bedroom.");
         Greenhouse greenhouse = new Greenhouse("Greenhouse", "It's a greenhouse with beautiful plants.");
 
-        livingRoom.setExit("kitchen", kitchen);
-        livingRoom.setExit("bedroom", bedroom);
-        kitchen.setExit("living room", livingRoom);
-        kitchen.setExit("greenhouse", greenhouse);
-        bedroom.setExit("living room", livingRoom);
-        greenhouse.setExit("kitchen", kitchen);
+        livingRoom.setExit("Kitchen", kitchen);
+        livingRoom.setExit("Bedroom", bedroom);
+        kitchen.setExit("Living Room", livingRoom);
+        kitchen.setExit("Greenhouse", greenhouse);
+        bedroom.setExit("Living Room", livingRoom);
+        greenhouse.setExit("Kitchen", kitchen);
 
         livingRoom.addItem(new TVItem("TV", "A TV that can show cooking channels."));
         kitchen.addItem(new WateringCanItem("Watering Can", "A watering can to water the plants."));
         kitchen.addItem(new KeyItem("Key", "A key to enter the greenhouse.", greenhouse));
         kitchen.addItem(new CookingItem("Cooking Utensils", "Cook a meal using ingredients."));
-        bedroom.addItem(new BookItem("Book", "A readable book.", "Enjoy text adventure games!"));
+        bedroom.addItem(new RecipeItem("Recipe", "A readable recipe.", "Enjoy text adventure games!"));
 
-        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as a ingredient for cooking."));
+        greenhouse.addPlant(new Plant("Basil","A basil plant that can be used as an ingredient for cooking."));
 
         rooms.put("Living Room", livingRoom);
         rooms.put("Kitchen", kitchen);
@@ -95,7 +97,7 @@ class Player {
     public void handleInput(String input) {
         decreaseHealth();
         String[] parts = input.split(" ");
-        String command = parts[0].toLowerCase(); // 명령어를 소문자로 변환
+        String command = parts[0];
 
         switch (command) {
             case "go":
@@ -104,7 +106,7 @@ class Player {
                     return;
                 }
                 String direction = parts[1];
-                Room nextRoom = currentRoom.getExit(direction.toLowerCase()); // 방향을 소문자로 변환
+                Room nextRoom = currentRoom.getExit(direction);
                 if (nextRoom == null) {
                     System.out.println("There is no room in that direction.");
                 } else {
@@ -124,7 +126,7 @@ class Player {
                     return;
                 }
                 String itemName = parts[1];
-                Item item = currentRoom.getItem(itemName.toLowerCase()); // 아이템 이름을 소문자로 변환
+                Item item = currentRoom.getItem(itemName);
                 if (item == null) {
                     System.out.println("Item not found.");
                 } else {
@@ -138,16 +140,55 @@ class Player {
                 }
                 break;
             case "harvest":
-                harvestPlants();
+                if (currentRoom instanceof Greenhouse) {
+                    Greenhouse greenhouse = (Greenhouse) currentRoom;
+                    Plant plant = greenhouse.getPlant();
+                    if (plant != null) {
+                        plant.harvest();
+                        inventory.put(plant.getName(), new Item(plant.getName(), plant.getDescription()));
+                        System.out.println("You harvested the plant and obtained some ingredients.");
+                    } else {
+                        System.out.println("There are no plants to harvest.");
+                    }
+                } else {
+                    System.out.println("You are not in the greenhouse.");
+                }
                 break;
             case "clean":
-                cleanRoom();
+                if (currentRoom.isClean()) {
+                    System.out.println("The room is already clean.");
+                } else {
+                    currentRoom.clean();
+                    System.out.println("You cleaned the room.");
+                }
                 break;
             case "cook":
-                cookMeal();
+                if (currentRoom.getName().equalsIgnoreCase("kitchen")) {
+                    boolean hasIngredients = inventory.containsKey("Basil");
+                    if (hasIngredients) {
+                        System.out.println("Cooking a meal...");
+                        double successRate = getCookingSuccessRate();
+                        if (Math.random() < successRate) {
+                            System.out.println("You successfully cooked a meal!");
+                        } else {
+                            System.out.println("You failed to cook the meal.");
+                        }
+                    } else {
+                        System.out.println("You don't have the necessary ingredients.");
+                    }
+                } else {
+                    System.out.println("You need to be in the kitchen to cook.");
+                }
                 break;
             case "sleep":
-                sleep();
+                Map<String, Room> rooms = TextAdventureGame.createRooms();
+                if (rooms.values().stream().allMatch(Room::isClean) && currentRoom.getName().equalsIgnoreCase("bedroom")) {
+                    System.out.println("You sleep in the clean bedroom.");
+                    System.out.println("You had a good rest. Good Ending!");
+                    System.exit(0);
+                } else {
+                    System.out.println("You cannot sleep yet. Make sure all rooms are clean and you are in the bedroom.");
+                }
                 break;
             default:
                 System.out.println("Invalid command.");
@@ -170,69 +211,6 @@ class Player {
     public double getCookingSuccessRate() {
         return cookingSuccessRate;
     }
-
-    private void harvestPlants() {
-        if (currentRoom instanceof Greenhouse) {
-            Greenhouse greenhouse = (Greenhouse) currentRoom;
-            Plant plant = greenhouse.getPlant();
-            if (plant != null) {
-                System.out.println("Harvested " + plant.getName());
-                inventory.put(plant.getName().toLowerCase(), new Plant(plant.getName(), plant.getDescription()));
-            } else {
-                System.out.println("No plants to harvest.");
-            }
-        } else {
-            System.out.println("Harvesting is not available in this room.");
-        }
-    }
-
-    private void cleanRoom() {
-        if (currentRoom instanceof Room) {
-            Room room = (Room) currentRoom;
-            if (!room.isClean()) {
-                room.clean();
-                System.out.println("The room is now clean.");
-            } else {
-                System.out.println("The room is already clean.");
-            }
-        } else {
-            System.out.println("Cleaning is not available in this room.");
-        }
-    }
-
-    private void cookMeal() {
-        if (currentRoom.getName().equalsIgnoreCase("kitchen")) {
-            if (inventory.containsKey("basil")) {
-                System.out.println("Cooking a meal with basil...");
-                // Implement cooking process here
-            } else {
-                System.out.println("You need basil to cook a meal.");
-            }
-        } else {
-            System.out.println("You can only cook in the kitchen.");
-        }
-    }
-
-    private void sleep() {
-        boolean allRoomsClean = true;
-        for (Room room : currentRoom.getExits().values()) {
-            if (!room.isClean()) {
-                allRoomsClean = false;
-                break;
-            }
-        }
-
-        if (allRoomsClean) {
-            if (currentRoom.getName().equalsIgnoreCase("bedroom")) {
-                System.out.println("You go to sleep.");
-                // Implement sleeping process here
-            } else {
-                System.out.println("You need to be in the bedroom to sleep.");
-            }
-        } else {
-            System.out.println("You cannot sleep until all rooms are clean.");
-        }
-    }
 }
 
 class Room {
@@ -240,6 +218,7 @@ class Room {
     private String description;
     private Map<String, Room> exits;
     private Map<String, Item> items;
+    private Plant plant;
     private boolean clean;
 
     public Room(String name, String description) {
@@ -251,15 +230,11 @@ class Room {
     }
 
     public void setExit(String direction, Room neighbor) {
-        exits.put(direction.toLowerCase(), neighbor); // 방향을 소문자로 저장
+        exits.put(direction, neighbor);
     }
 
     public Room getExit(String direction) {
-        return exits.get(direction.toLowerCase()); // 방향을 소문자로 조회
-    }
-
-    public Map<String, Room> getExits() {
-        return exits;
+        return exits.get(direction);
     }
 
     public String getName() {
@@ -271,15 +246,19 @@ class Room {
     }
 
     public void addItem(Item item) {
-        items.put(item.getName().toLowerCase(), item); // 아이템 이름을 소문자로 저장
+        items.put(item.getName(), item);
     }
 
     public Item getItem(String itemName) {
-        return items.get(itemName.toLowerCase()); // 아이템 이름을 소문자로 조회
+        return items.get(itemName);
     }
 
     public Collection<Item> getItems() {
         return items.values();
+    }
+
+    public void addPlant(Plant plant) {
+        this.plant = plant;
     }
 
     public boolean isClean() {
@@ -291,6 +270,115 @@ class Room {
     }
 }
 
+class Item {
+    private String name;
+    private String description;
+    private boolean usable;
+
+    public Item(String name, String description, boolean usable) {
+        this.name = name;
+        this.description = description;
+        this.usable = usable;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean isUsable() {
+        return usable;
+    }
+
+    public void use(Player player) {
+        System.out.println("This item cannot be used.");
+    }
+}
+
+class TVItem extends Item {
+    public TVItem(String name, String description) {
+        super(name, description, true);
+    }
+
+    @Override
+    public void use(Player player) {
+        System.out.println("Watching TV...");
+        System.out.println("While watching TV, you feel inspired for cooking. Cooking success rate increased by 50%.");
+        player.setCookingSuccessRate(0.5);
+    }
+}
+
+class WateringCanItem extends Item {
+    public WateringCanItem(String name, String description) {
+        super(name, description, true);
+    }
+}
+
+class KeyItem extends Item {
+    private Room targetRoom;
+
+    public KeyItem(String name, String description, Room targetRoom) {
+        super(name, description, true);
+        this.targetRoom = targetRoom;
+    }
+
+    public Room getTargetRoom() {
+        return targetRoom;
+    }
+}
+
+class CookingItem extends Item {
+    public CookingItem(String name, String description) {
+        super(name, description, true);
+    }
+}
+
+class RecipeItem extends Item {
+    private String content;
+
+    public RecipeItem(String name, String description, String content) {
+        super(name, description, true);
+        this.content = content;
+    }
+}
+
+class Plant {
+    private String name;
+    private String description;
+    private int growthLevel;
+
+    public Plant(String name, String description) {
+        this.name = name;
+        this.description = description;
+        this.growthLevel = 0;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getGrowthLevel() {
+        return growthLevel;
+    }
+
+    public void water() {
+        System.out.println("You watered the plant. It looks happier now.");
+        growthLevel++;
+    }
+
+    public void harvest() {
+        System.out.println("You harvested the plant. You obtained some ingredients.");
+        growthLevel = 0; //after harvest initiate growthLevel
+    }
+}
+
 class Greenhouse extends Room {
     private Plant plant;
 
@@ -298,113 +386,11 @@ class Greenhouse extends Room {
         super(name, description);
     }
 
-    public Plant getPlant() {
-        return plant;
-    }
-
     public void addPlant(Plant plant) {
         this.plant = plant;
     }
-}
 
-class Plant {
-    private String name;
-    private String description;
-
-    public Plant(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-}
-
-class Item {
-    private String name;
-    private String description;
-
-    public Item(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void use(Player player) {
-        // Implement use action
-    }
-}
-
-class TVItem extends Item {
-    public TVItem(String name, String description) {
-        super(name, description);
-    }
-
-    @Override
-    public void use(Player player) {
-        System.out.println("You watch TV.");
-    }
-}
-
-class WateringCanItem extends Item {
-    public WateringCanItem(String name, String description) {
-        super(name, description);
-    }
-
-    @Override
-    public void use(Player player) {
-        System.out.println("You use the watering can.");
-    }
-}
-
-class KeyItem extends Item {
-    private Room unlockRoom;
-
-    public KeyItem(String name, String description, Room unlockRoom) {
-        super(name, description);
-        this.unlockRoom = unlockRoom;
-    }
-
-    @Override
-    public void use(Player player) {
-        player.setCurrentRoom(unlockRoom);
-        System.out.println("You unlock the door and move to " + unlockRoom.getName());
-    }
-}
-
-class CookingItem extends Item {
-    public CookingItem(String name, String description) {
-        super(name, description);
-    }
-
-    @Override
-    public void use(Player player) {
-        System.out.println("You start cooking.");
-    }
-}
-
-class BookItem extends Item {
-    private String content;
-
-    public BookItem(String name, String description, String content) {
-        super(name, description);
-        this.content = content;
-    }
-
-    @Override
-    public void use(Player player) {
-        System.out.println("You read the book: " + content);
+    public Plant getPlant() {
+        return plant;
     }
 }
