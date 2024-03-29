@@ -16,7 +16,7 @@ public class TextAdventureGame {
             String input = scanner.nextLine();
             }
         }
-        scanner.close();
+        scanner.close();;;;
     }
 
     private static Map<String, Room> createRooms() {
