@@ -145,16 +145,58 @@ class Player {
                 }
                 break;
             case "harvest":
-                harvestPlants();
+                if (currentRoom instanceof Greenhouse) { //in greenhouse
+                    Greenhouse greenhouse = (Greenhouse) currentRoom;
+                    PlantItem plant = greenhouse.getPlant();
+                    if (plant != null) {
+                        inventory.put(plant.getName(), new PlantItem(plant.getName(), plant.getDescription()));
+                        plant.height = 0;
+                        System.out.println("You harvested the plant. You obtained some ingredients.");
+                    } else {
+                        System.out.println("There are no plants to harvest.");
+                    }
+                } else { //not in greenhouse
+                    System.out.println("You can only harvest plants in the greenhouse.");
+                }
                 break;
             case "clean":
-                clean();
+                if (!currentRoom.isClean()) {
+                    currentRoom.clean();
+                    System.out.println("You cleaned the room.");
+                } else {
+                    System.out.println("The room is already clean.");
+                }
                 break;
             case "cook":
-                cookMeal();
+                if (currentRoom.getName().equalsIgnoreCase("kitchen")) { // in kitchen
+                    if (inventory.containsKey("basil")) { // with basil
+                        // try cooking
+                        if (Math.random() < getCookingSuccessRate()) { //success or fail decide by cooking success rate
+                            System.out.println("You successfully cooked a meal.");
+                            // if every room is cleaned, Perfect ending
+                            if (areAllRoomsClean()) {
+                                System.out.println("Perfect ending! You successfully cooked a meal and cleaned all rooms.");
+                            } else { //if not Happy ending
+                                System.out.println("Happy ending! You successfully cooked a meal but some rooms are not clean.");
+                            }
+                        } else {  // fail cooking
+                            health -= 10; // health decrease
+                            System.out.println("You failed to cook the meal. Health decreased. Current health: " + health);
+                        }
+                    } else { // without basil
+                        System.out.println("You need basil to cook a meal.");
+                    }
+                } else {
+                    System.out.println("You can only cook in the kitchen."); // not in kitchen
+                }
                 break;
             case "sleep":
-                sleep();
+                if (areAllRoomsClean() && currentRoom.getName().equalsIgnoreCase("bedroom")) {
+                    System.out.println("You slept and restored your health.");
+                    health = INITIAL_HEALTH;
+                } else { //not in bedroom
+                    System.out.println("You cannot sleep now.");
+                }
                 break;
             case "get":
                 if (parts.length < 2) {
@@ -169,10 +211,10 @@ class Player {
         }
     }
 
-    private void decreaseHealth() {
+    private void decreaseHealth() { //every movement
         health--;
-        System.out.println("Player's health decreased. Current health: " + health);
-        if (health <= 0) {
+        System.out.println("Current health: " + health);
+        if (health <= 0) { //if health goes under 0, bad ending
             System.out.println("Health reached 0, player fainted... Bad Ending!");
             System.exit(0);
         }
@@ -186,41 +228,7 @@ class Player {
         return cookingSuccessRate;
     }
 
-    private void harvestPlants() {
-        if (currentRoom instanceof Greenhouse) {
-            Greenhouse greenhouse = (Greenhouse) currentRoom;
-            PlantItem plant = greenhouse.getPlant();
-            if (plant != null) {
-                inventory.put(plant.getName(), new PlantItem(plant.getName(), plant.getDescription()));
-                greenhouse.removePlant();
-                System.out.println("You harvested the plant. You obtained some ingredients.");
-            } else {
-                System.out.println("There are no plants to harvest.");
-            }
-        } else {
-            System.out.println("You can only harvest plants in the greenhouse.");
-        }
-    }
-
-    private void clean() {
-        if (!currentRoom.isClean()) {
-            currentRoom.clean();
-            System.out.println("You cleaned the room.");
-        } else {
-            System.out.println("The room is already clean.");
-        }
-    }
-
-    private void sleep() {
-        if (areAllRoomsClean() && currentRoom.getName().equalsIgnoreCase("Bedroom")) {
-            System.out.println("You slept and restored your health.");
-            health = INITIAL_HEALTH;
-        } else {
-            System.out.println("You cannot sleep now.");
-        }
-    }
-
-    private boolean areAllRoomsClean() {
+    private boolean areAllRoomsClean() { //check if all rooms are cleaned
         for (Room room : TextAdventureGame.rooms.values()) {
             if (!room.isClean()) {
                 return false;
@@ -229,18 +237,6 @@ class Player {
         return true;
     }
 
-    private void cookMeal() {
-        if (currentRoom.getName().equalsIgnoreCase("Kitchen")) {
-            if (inventory.containsKey("Basil")) {
-                System.out.println("You cooked a meal using basil. Cooking success rate increased.");
-                setCookingSuccessRate(getCookingSuccessRate() + 0.4);
-            } else {
-                System.out.println("You need basil to cook a meal.");
-            }
-        } else {
-            System.out.println("You can only cook in the kitchen.");
-        }
-    }
 
     public void get(String itemName) {
         Item item = currentRoom.getItem(itemName);
@@ -341,7 +337,7 @@ class TVItem extends Item {
     public void use(Player player) {
         System.out.println("Watching TV...");
         System.out.println("While watching TV, you feel inspired for cooking. Cooking success rate increased.");
-        player.setCookingSuccessRate(player.getCookingSuccessRate() + 0.2);
+        player.setCookingSuccessRate(player.getCookingSuccessRate() + 0.3);
     }
 }
 
@@ -397,10 +393,10 @@ class WateringCanItem extends Item {
             Greenhouse greenhouse = (Greenhouse) player.getCurrentRoom();
             PlantItem plant = greenhouse.getPlant();
             if (plant != null) {
-                System.out.println("You used the watering can.");
-                System.out.println("The plant has grown by " + plant.getHeight() + " units.");
-                System.out.println("The plant is watered and looks healthier.");
                 greenhouse.growPlant(); // grow plant
+                System.out.println("You used the watering can.");
+                System.out.println("The plant is watered and looks healthier.");
+                System.out.println("The plant has grown by " + plant.height + " units.");
             } else {
                 System.out.println("There are no plants to water.");
             }
@@ -412,7 +408,7 @@ class WateringCanItem extends Item {
 
 
 class PlantItem extends Item{
-    private int height; // height of the plant
+    public int height; // height of the plant
     private boolean mature; // is plant mature or not
 
     public PlantItem(String name, String description) {
@@ -430,10 +426,6 @@ class PlantItem extends Item{
         if (height >= 3) { // if you player give water 3 times, mature
             mature = true; // plant is mature
         }
-    }
-
-    public int getHeight() {
-        return height;
     }
 
     public boolean isMature() {
@@ -468,9 +460,6 @@ class Greenhouse extends Room {
         } else {
             return super.getItem(itemName);
         }
-    }
-    public void removePlant() {
-        this.plant = null;
     }
 
     public void growPlant() {
