@@ -9,7 +9,7 @@ public class TextAdventureGame {
     public static Map<String, Room> rooms;
 
     public static void main(String[] args) {
-        System.out.println("Starting the housework!");
+        System.out.println("<Starting the housework!>\nYou are hungry and all over the house is dirty now.\nYou can use 'help' to see commands.");
 
         Player player = new Player();
         rooms = createRooms();
@@ -28,6 +28,7 @@ public class TextAdventureGame {
                 System.out.println("- go direction: Move in the specified direction.");
                 System.out.println("- look: Display the current room's description and item list.");
                 System.out.println("- use item name: Use the specified item.");
+                System.out.println("- get item name: Put the specified item in the inventory.");
                 System.out.println("- inventory: Display the list of items in the inventory.");
                 System.out.println("- harvest: Harvest plants to obtain ingredients.");
                 System.out.println("- clean: Clean the living room, bedroom, and kitchen.");
