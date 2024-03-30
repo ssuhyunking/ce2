@@ -395,7 +395,7 @@ class WateringCanItem extends Item {
     public void use(Player player) {
         if (player.getCurrentRoom() instanceof Greenhouse) {
             Greenhouse greenhouse = (Greenhouse) player.getCurrentRoom();
-            Plant plant = greenhouse.getPlant();
+            PlantItem plant = greenhouse.getPlant();
             if (plant != null) {
                 System.out.println("You used the watering can.");
                 System.out.println("The plant has grown by " + plant.getHeight() + " units.");
@@ -442,13 +442,22 @@ class PlantItem extends Item{
 }
 
 class Greenhouse extends Room {
-    private Plant plant;
+    private PlantItem plant;
 
     public Greenhouse(String name, String description) {
         super(name, description);
     }
 
-    public Plant getPlant() {
+    @Override
+    public void addItem(Item item) {
+        if (item instanceof PlantItem) {
+            this.plant = (PlantItem) item;
+        } else {
+            super.addItem(item);
+        }
+    }
+
+    public PlantItem getPlant() {
         return plant;
     }
 
