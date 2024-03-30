@@ -57,8 +57,9 @@ public class TextAdventureGame {
 
         livingRoom.addItem(new TVItem("tv", "A TV that can show cooking channels."));
         kitchen.addItem(new KeyItem("key", "A key to enter the greenhouse.", kitchen));
-        kitchen.addItem(new WateringCanItem("watering_can", "A can used for watering plants."));
+        kitchen.addItem(new WateringCanItem("wateringcan", "A can used for watering plants."));
         bedroom.addItem(new RecipeItem("recipe", "A recipe book.", "Enjoy text adventure games!"));
+        greenhouse.addItem(new PlantItem("basil", "A basil plant that you can cook with. You can make it grow."));
 
         rooms.put("livingroom", livingRoom);
         rooms.put("kitchen", kitchen);
@@ -73,6 +74,9 @@ class Player {
     private int health;
     private Room currentRoom;
     private Map<String, Item> inventory;
+    public Map<String, Item> getInventory() {
+        return inventory;
+    }
     private double cookingSuccessRate;
 
     private static final int INITIAL_HEALTH = 50;
@@ -124,17 +128,14 @@ class Player {
                     return;
                 }
                 String itemName = parts[1];
-                Item item = currentRoom.getItem(itemName);
+                Item item = inventory.get(itemName); // Try to get item from inventory first
+                if (item == null) { // If item not found in inventory, try to find it in the room
+                    item = currentRoom.getItem(itemName);
+                }
                 if (item == null) {
                     System.out.println("Item not found.");
                 } else {
-                    if (item instanceof WateringCanItem) {
-                        inventory.put(item.getName(), item); // get item
-                        currentRoom.removeItem(item); // remove item from the room
-                        System.out.println("You obtained the watering_can.");
-                    } else {
                         item.use(this);
-                    }
                 }
                 break;
             case "inventory":
@@ -154,6 +155,14 @@ class Player {
                 break;
             case "sleep":
                 sleep();
+                break;
+            case "get":
+                if (parts.length < 2) {
+                    System.out.println("Specify the item to get.");
+                    return;
+                }
+                String getItemName = parts[1];
+                get(getItemName);
                 break;
             default:
                 System.out.println("Invalid command.");
@@ -180,7 +189,7 @@ class Player {
     private void harvestPlants() {
         if (currentRoom instanceof Greenhouse) {
             Greenhouse greenhouse = (Greenhouse) currentRoom;
-            Plant plant = greenhouse.getPlant();
+            PlantItem plant = greenhouse.getPlant();
             if (plant != null) {
                 inventory.put(plant.getName(), new PlantItem(plant.getName(), plant.getDescription()));
                 greenhouse.removePlant();
@@ -230,6 +239,17 @@ class Player {
             }
         } else {
             System.out.println("You can only cook in the kitchen.");
+        }
+    }
+
+    public void get(String itemName) {
+        Item item = currentRoom.getItem(itemName);
+        if (item == null) {
+            System.out.println("Item not found.");
+        } else {
+            inventory.put(item.getName(), item);
+            currentRoom.removeItem(item);
+            System.out.println("You obtained the " + itemName + ".");
         }
     }
 }
@@ -365,47 +385,44 @@ class WateringCanItem extends Item {
         super(name, description);
     }
 
-    @Override
+    // Get method to add the watering can to inventory
+    public void get(Player player) {
+        player.getInventory().put(getName(), this); // Add the watering can to player's inventory
+        System.out.println("You obtained the wateringcan.");
+    }
+
+    // Use method to grow plants if the player is in the greenhouse
     public void use(Player player) {
         if (player.getCurrentRoom() instanceof Greenhouse) {
             Greenhouse greenhouse = (Greenhouse) player.getCurrentRoom();
             Plant plant = greenhouse.getPlant();
             if (plant != null) {
-                System.out.println("You used the watering_can.");
+                System.out.println("You used the watering can.");
+                System.out.println("The plant has grown by " + plant.getHeight() + " units.");
                 System.out.println("The plant is watered and looks healthier.");
                 greenhouse.growPlant(); // grow plant
             } else {
                 System.out.println("There are no plants to water.");
             }
         } else {
-            System.out.println("You can only use the watering_can in the greenhouse.");
+            System.out.println("You can only use the watering can in the greenhouse.");
         }
     }
 }
 
-class PlantItem extends Item {
-    public PlantItem(String name, String description) {
-        super(name, description);
-    }
-}
 
-class Plant {
-    private String name;
-    private String description;
+class PlantItem extends Item{
     private int height; // height of the plant
     private boolean mature; // is plant mature or not
 
-    public Plant(String name, String description) {
-        this.name = name;
-        this.description = description;
+    public PlantItem(String name, String description) {
+        super(name, description);
+        this.height = 0;
+        this.mature = false;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
+    public void use(Player player) {
+        System.out.println("You cannot use the plant item directly.");
     }
 
     public void grow() {
@@ -413,6 +430,10 @@ class Plant {
         if (height >= 3) { // if you player give water 3 times, mature
             mature = true; // plant is mature
         }
+    }
+
+    public int getHeight() {
+        return height;
     }
 
     public boolean isMature() {
@@ -431,10 +452,14 @@ class Greenhouse extends Room {
         return plant;
     }
 
-    public void setPlant(Plant plant) {
-        this.plant = plant;
+    @Override
+    public Item getItem(String itemName) {
+        if (plant != null && plant.getName().equalsIgnoreCase(itemName)) {
+            return plant;
+        } else {
+            return super.getItem(itemName);
+        }
     }
-
     public void removePlant() {
         this.plant = null;
     }
